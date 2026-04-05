@@ -1,0 +1,7 @@
+# Local/Development requirements
+
+# Include base requirements
+-r base.txt
+
+# Development Tools
+watchfiles==1.1.1

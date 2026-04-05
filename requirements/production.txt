@@ -1,0 +1,25 @@
+# Production requirements
+
+# Include base requirements
+-r base.txt
+
+# Production Server
+gunicorn>=21.2,<22.0
+uvicorn>=0.25,<1.0
+
+# Security
+django-secure>=1.0,<2.0
+
+# Monitoring & Logging
+sentry-sdk>=1.39,<2.0
+django-prometheus>=2.3,<3.0
+
+# Caching
+django-redis>=5.4,<6.0
+
+# Storage
+boto3>=1.34,<2.0
+django-storages>=1.14,<2.0
+
+# Health Checks
+django-health-check>=3.17,<4.0
