@@ -6,6 +6,7 @@ services:
       volumes:
         - .:/app:z
         - ./staticfiles:/app/staticfiles
+        - app_logs:/app/logs
       ports:
         - "8000:8000"
       env_file:
@@ -21,7 +22,7 @@ services:
       context: .
       dockerfile: ./docker/local/postgres/Dockerfile
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - banker_local_db:/var/lib/postgresql/data
     env_file:
@@ -51,5 +52,6 @@ networks:
 volumes:
   banker_local_db:
   banker_mailpit_db:
+  app_logs:
 
 

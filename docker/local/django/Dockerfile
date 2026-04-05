@@ -1,4 +1,4 @@
-FROM docker.io/python:3.12-alpine AS python
+FROM docker.io/python:3.12.2-slim-bookworm AS python
 
 # Stage 1: Build our dependency wheels
 FROM python AS python-build-stage
@@ -7,7 +7,8 @@ ARG BUILD_ENVIRONMENT=local
 
 RUN apt-get update && apt-get install --no-install-recommends -y \
     build-essential \
-    libpq-dev
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY ./requirements .
 
@@ -36,9 +37,9 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 
 RUN addgroup --system django && \
     adduser --system --ingroup django django && \
-    mkdir -p ${APP_HOME}/staticfiles && \
-    chown django:django ${APP_HOME}/staticfiles && \
-    chmod 775 ${APP_HOME}/staticfiles
+    mkdir -p ${APP_HOME}/static ${APP_HOME}/logs && \
+    chown -R django:django ${APP_HOME}/static ${APP_HOME}/logs && \
+    chmod -R 775 ${APP_HOME}/static ${APP_HOME}/logs
 
 COPY --from=python-build-stage /usr/src/app/wheels /wheels/
 

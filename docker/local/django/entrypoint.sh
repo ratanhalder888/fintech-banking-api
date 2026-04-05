@@ -22,7 +22,7 @@ while True:
             port="${POSTGRES_PORT}",
         )
         break
-    except psycopg2.OperationalError as Error:
+    except psycopg2.OperationalError as error:
         sys.stderr.write("Waiting for PostgreSQL to become available...\n")
         if time.time() - start > suggest_unrecoverable_after:
             sys.stderr.write(
