@@ -32,6 +32,8 @@ if path.isfile(local_env_file):
 
 # Application definition
 
+BANK_NAME = getenv("BANK_NAME", "DEFAULT")
+
 DJANGO_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
