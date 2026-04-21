@@ -9,17 +9,15 @@ from django.conf import settings
 def generate_otp(length=6) -> str:
     return "".join(random.choices(string.digits, k=length))
 
+def generate_username() -> str:
+    prefix = get_prefix()
+    snowflake_id = _generator.generate()
+    return f"{prefix}-{snowflake_id}"
 
-def get_machine_id() -> int:
-    try:
-        ip = socket.gethostbyname(socket.gethostname())
-        parts = ip.split('.')
-        return (int(parts[2]) * 256 + int(parts[3])) % 1024
-    except Exception:
-        return 1
+def get_prefix() -> str:
+    bank_name = settings.BANK_NAME
+    return "".join(word[0] for word in bank_name.split()).upper() or "APP"
 
-
-machine_id = get_machine_id()
 
 class SnowflakeIDGenerator:
     def __init__(self, machine_id: int):
@@ -61,12 +59,15 @@ class SnowflakeIDGenerator:
 # singletone generator
 _generator = SnowflakeIDGenerator(machine_id=machine_id)
 
-def get_prefix() -> str:
-    bank_name = settings.BANK_NAME
-    return "".join(word[0] for word in bank_name.split()).upper() or "APP"
 
-def generate_username() -> str:
-    prefix = get_prefix()
-    snowflake_id = _generator.generate()
-    return f"{prefix}-{snowflake_id}"
 
+def get_machine_id() -> int:
+    try:
+        ip = socket.gethostbyname(socket.gethostname())
+        parts = ip.split('.')
+        return (int(parts[2]) * 256 + int(parts[3])) % 1024
+    except Exception:
+        return 1
+
+
+machine_id = get_machine_id()
