@@ -14,6 +14,10 @@ def generate_username() -> str:
     snowflake_id = _generator.generate()
     return f"{prefix}-{snowflake_id}"
 
+def generate_user_id() -> int:
+    """Generate a unique Snowflake ID for user primary key."""
+    return _generator.generate()
+
 def get_prefix() -> str:
     bank_name = settings.BANK_NAME
     return "".join(word[0] for word in bank_name.split()).upper() or "APP"
@@ -56,11 +60,6 @@ class SnowflakeIDGenerator:
             return (timestamp << 22) | (self.machine_id << 12) | self.sequence
 
     
-# singletone generator
-_generator = SnowflakeIDGenerator(machine_id=machine_id)
-
-
-
 def get_machine_id() -> int:
     try:
         ip = socket.gethostbyname(socket.gethostname())
@@ -71,3 +70,6 @@ def get_machine_id() -> int:
 
 
 machine_id = get_machine_id()
+
+# singletone generator
+_generator = SnowflakeIDGenerator(machine_id=machine_id)

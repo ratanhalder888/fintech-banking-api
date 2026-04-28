@@ -1,5 +1,4 @@
 from django.db import models
-import uuid
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
@@ -7,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 
 from .emails import send_account_locked_email
 from .managers import UserManager
+from .utils import generate_user_id
 
 # Create your models here.
 class User(AbstractUser):
@@ -34,8 +34,8 @@ class User(AbstractUser):
         TELLER = "teller", _("Teller")
         BRANCH_MANAGER = "branch_manager", _("Branch Manager")
     
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    username = models.CharField(_("Username"), max_length=12, unique=True)
+    id = models.BigIntegerField(primary_key=True, default=generate_user_id, editable=False)
+    username = models.CharField(_("Username"), max_length=32, unique=True)
     security_question = models.CharField(
         _("Security Questions"),
         max_length=30,
