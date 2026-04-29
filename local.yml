@@ -5,10 +5,12 @@ services:
         dockerfile: ./docker/local/django/Dockerfile
       volumes:
         - .:/app:z
-        - ./staticfiles:/app/staticfiles
+        # - ./staticfiles:/app/staticfiles
         - app_logs:/app/logs
-      ports:
-        - "8000:8000"
+      # ports:
+      #   - "8000:8000"
+      expose:
+        - "8000"
       env_file:
         - ./.envs/.env.local
       depends_on:
@@ -17,6 +19,7 @@ services:
       command: /start.sh
       networks:
         - banker_local_nw
+
   postgres:
     build:
       context: .
@@ -29,6 +32,7 @@ services:
       - ./.envs/.env.local
     networks:
       - banker_local_nw
+
   mailpit:
     image: axllent/mailpit:latest
     container_name: mailpit
@@ -44,6 +48,21 @@ services:
       MP_SMTP_AUTH_ALLOW_INSECURE: 1
     networks:
       - banker_local_nw
+  
+  nginx:
+    build:
+      context: ./docker/local/nginx
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - ./staticfiles:/app/staticfiles
+      - logs_store:/var/log/nginx
+    depends_on:
+      - api
+    networks:
+      - banker_local_nw
 
 networks:
   banker_local_nw:
@@ -53,5 +72,6 @@ volumes:
   banker_local_db:
   banker_mailpit_db:
   app_logs:
+  logs_store:
 
 
