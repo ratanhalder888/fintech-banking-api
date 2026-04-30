@@ -20,6 +20,10 @@ cloudinary = "*"
 python-dateutil = "*"
 psycopg2-binary = "*"
 loguru = "*"
+redis = "*"
+celery = "*"
+flower = "*"
+django-redis = "*"
 
 [dev-packages]
 watchfiles = "*"
