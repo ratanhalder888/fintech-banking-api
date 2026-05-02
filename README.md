@@ -1,243 +1,270 @@
-# Fintech-Banking API
+# Fintech Banking API
 
-A robust, scalable RESTful API for fintech and banking applications built with Django REST Framework. This API provides secure authentication, user management, and is designed to handle financial transactions and banking operations.
+A modern, scalable REST API foundation for building fintech and banking applications. Built with Django REST Framework and PostgreSQL, this project provides a production-ready scaffold with secure authentication, background job processing, and comprehensive API documentation.
+
+> **Note:** This is an early-stage scaffold designed for rapid development. Core authentication is wired; API routes and business logic are ready for implementation.
+
+---
+
+## Why Fintech Banking API?
+
+Building a banking API from scratch is complex. Authentication, logging, Docker setup, and deployment infrastructure are non-trivial challenges. This project solves this by providing:
+
+- **Security-first architecture** with JWT authentication and Argon2 password hashing
+- **Production-ready infrastructure** – Django settings for local/production, Docker Compose, and logging via Loguru
+- **Developer experience** – Auto-generated API docs (Swagger/ReDoc), CLI commands, and Makefile shortcuts
+- **Async processing** – Celery integration for background tasks like email and notifications
+- **Cloud-ready** – Support for Cloudinary, AWS S3, and Sentry out of the box
+
+No more starting from scratch. Focus on **what makes your fintech platform unique**, not infrastructure.
+
+---
+
+## Key Features
+
+| Feature | Details |
+|---------|---------|
+| **JWT Authentication** | Secure token-based auth with access & refresh tokens |
+| **User Management** | Registration, login, password reset via Djoser |
+| **Social Auth** | OAuth integration ready |
+| **Async Tasks** | Celery + Celery Beat for background jobs |
+| **API Docs** | Auto-generated Swagger/ReDoc with drf-spectacular |
+| **Advanced Logging** | Structured logging via Loguru (console + file) |
+| **Cloud Storage** | Cloudinary & AWS S3 integration |
+| **Monitoring** | Sentry & Prometheus metrics ready |
+| **Phone Validation** | International phone number support |
+| **Docker & Compose** | Local dev + production-ready setup |
+
+---
 
 ## Tech Stack
 
-| Category | Technologies |
-|----------|-------------|
+| Layer | Technology |
+|-------|-----------|
 | **Framework** | Django 6.0.3, Django REST Framework 3.17.1 |
-| **Language** | Python 3.12 |
-| **Database** | PostgreSQL (primary), SQLite (development) |
-| **Authentication** | JWT (SimpleJWT), Djoser, Social Auth (OAuth) |
-| **Task Queue** | Celery 5.6.3, django-celery-beat |
-| **API Docs** | drf-spectacular (OpenAPI/Swagger) |
-| **Storage** | Cloudinary (media), AWS S3 (production) |
-| **Monitoring** | Sentry, django-prometheus |
+| **Language** | Python 3.12+ |
+| **Database** | PostgreSQL 14+ (primary), SQLite (development) |
+| **Authentication** | JWT (SimpleJWT), Djoser, OAuth |
+| **Task Queue** | Celery 5.6.3 + django-celery-beat |
+| **API Docs** | drf-spectacular (OpenAPI 3.0) |
+| **Async** | Celery with Redis broker |
 | **Logging** | Loguru |
+| **Containerization** | Docker & Docker Compose |
+
+---
 
 ## Project Structure
 
 ```
 fintech-banking-api/
-├── config/                     # Django project configuration
+├── config/                     # Django project settings & WSGI/ASGI
 │   ├── settings/
-│   │   ├── base.py            # Shared settings
-│   │   ├── local.py           # Development settings
-│   │   └── production.py      # Production settings
-│   ├── urls.py                # Root URL configuration
-│   ├── asgi.py                # ASGI application
-│   └── wsgi.py                # WSGI application
-├── core_apps/                  # Application modules
-│   ├── common/                # Shared utilities and base models
-│   ├── user_auth/             # User authentication
+│   │   ├── base.py            # Shared configuration
+│   │   ├── local.py           # Development
+│   │   └── production.py      # Production (empty, ready to fill)
+│   ├── urls.py                # Root URL config (admin only currently)
+│   ├── celery_app.py          # Celery configuration
+│   ├── wsgi.py & asgi.py
+│
+├── core_apps/                  # Django applications (stubs ready for development)
+│   ├── common/                # Shared utilities, base models
+│   ├── user_auth/             # Authentication & user registration
 │   └── user_profile/          # User profile management
+│
 ├── docker/                     # Docker configuration
 │   └── local/django/
 │       ├── Dockerfile
 │       └── entrypoint.sh
-├── logs/                       # Application logs
-│   ├── debug.log
-│   └── error.log
-├── requirements/               # Dependencies
-│   ├── base.txt               # Shared dependencies
-│   ├── local.txt              # Development dependencies
-│   └── production.txt         # Production dependencies
-├── .envs/                      # Environment files
-│   ├── .env.example           # Environment template
-│   └── .env.local             # Local environment (gitignored)
-├── manage.py
-├── Pipfile
-└── Pipfile.lock
+│
+├── requirements/               # Python dependencies
+│   ├── base.txt               # Shared
+│   ├── local.txt              # Development
+│   └── production.txt         # Production
+│
+├── local.yml                   # Docker Compose configuration
+├── Makefile                    # Convenient CLI commands
+├── Pipfile & Pipfile.lock     # Pipenv dependencies
+├── manage.py                   # Django management script
+└── logs/                       # Application logs (debug.log, error.log)
 ```
 
-## Features
+---
 
-- **JWT Authentication** - Secure token-based authentication with access and refresh tokens
-- **User Management** - Registration, login, password reset, email activation via Djoser
-- **Social Authentication** - OAuth integration for multiple providers
-- **Password Security** - Argon2 password hashing (industry-leading security)
-- **API Documentation** - Auto-generated OpenAPI/Swagger docs
-- **Background Tasks** - Celery integration for async processing
-- **Advanced Logging** - Structured logging with Loguru
-- **Cloud Storage** - Cloudinary integration for media files
-- **Phone Number Validation** - International phone number support
-- **Country Field Support** - Built-in country handling
+## Quick Start
 
-## Prerequisites
-
-- Python 3.12+
-- PostgreSQL 14+
-- Redis (for Celery broker)
-- Pipenv or pip
-
-## Installation
-
-### 1. Clone the Repository
+### 1. Clone & Set Up
 
 ```bash
+# Clone the repository
 git clone <repository-url>
 cd fintech-banking-api
-```
 
-### 2. Set Up Virtual Environment
-
-**Using Pipenv (Recommended):**
-
-```bash
-pipenv install
-pipenv shell OR source .venv/bin/activates
-```
-s
-**Using pip:**
-
-```bash
+# Create virtual environment
 python -m venv .venv
-source .venv/bin/activate  # Linux/Mac
+source .venv/bin/activate  # Linux/macOS
 # .venv\Scripts\activate   # Windows
 
+# Install dependencies
 pip install -r requirements/local.txt
 ```
 
-### 3. Configure Environment Variables
+### 2. Configure Environment
 
 ```bash
+# Copy environment template
 cp .envs/.env.example .envs/.env.local
+
+# Edit .envs/.env.local with your local settings
 ```
 
-Edit `.envs/.env.local` with your configuration:
-
-```bash
-# Django Settings
-SECRET_KEY="your-super-secret-key"
-DEBUG="True"
-SITE_NAME="Fintech Banking"
-ADMIN_URL="admin"
-DOMAIN="localhost:8000"
-
-# Email Configuration
-EMAIL_PORT="587"
-EMAIL_HOST="smtp.example.com"
-DEFAULT_FROM_EMAIL="noreply@example.com"
-
-# PostgreSQL Database
-POSTGRES_HOST="localhost"
-POSTGRES_PORT="5432"
-POSTGRES_USER="your_db_user"
-POSTGRES_DB="fintech_banking_db"
-POSTGRES_PASSWORD="your_db_password"
-
-# Application Specific
-BANK_NAME="Your Bank Name"
+**Minimum required variables:**
+```env
+SECRET_KEY=your-secret-key-here
+DEBUG=True
+SITE_NAME=Fintech Banking API
+ADMIN_URL=admin
+DOMAIN=localhost:8000
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+DEFAULT_FROM_EMAIL=noreply@fintech-banking-api.local
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=fintech_banking_api_user
+POSTGRES_DB=fintech_banking_api_db
+POSTGRES_PASSWORD=your_password
+BANK_NAME=Your Bank Name
 ```
 
-### 4. Set Up Database
+### 3. Set Up Database & Run
 
 ```bash
-# Create PostgreSQL database
-createdb fintech_banking_db
-
 # Run migrations
 python manage.py migrate
 
-# Create superuser
+# Create a superuser
 python manage.py createsuperuser
-```
 
-### 5. Run Development Server
-
-```bash
+# Start development server
 python manage.py runserver
 ```
 
-The API will be available at `http://localhost:8000`
+**API available at:** `http://localhost:8000`
 
-## Docker Setup
+---
 
-Build and run using Docker:
+## Using Docker
 
 ```bash
-# Build the image
-docker build -f docker/local/django/Dockerfile -t fintech-api .
+# Create Docker network (required once)
+docker network create banker_local_nw
 
-# Run the container
-docker run -p 8000:8000 --env-file .envs/.env.local fintech-api
+# Build and start services
+make build
+
+# Or use Docker directly
+docker-compose -f local.yml up --build
 ```
+
+Services run on: `http://localhost:8000`
+
+---
 
 ## API Documentation
 
-Once the server is running, access the API documentation at:
+Once running, access documentation at:
 
-- **Swagger UI**: `http://localhost:8000/api/schema/swagger-ui/`
-- **ReDoc**: `http://localhost:8000/api/schema/redoc/`
-- **OpenAPI Schema**: `http://localhost:8000/api/schema/`
+- **Swagger UI:** `http://localhost:8000/api/schema/swagger-ui/`
+- **ReDoc:** `http://localhost:8000/api/schema/redoc/`
+- **OpenAPI Schema:** `http://localhost:8000/api/schema/`
 
-## Authentication Endpoints (via Djoser)
+### Authentication Endpoints (Djoser)
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
 | `/auth/users/` | POST | Register new user |
 | `/auth/users/me/` | GET | Get current user |
 | `/auth/jwt/create/` | POST | Obtain JWT token |
-| `/auth/jwt/refresh/` | POST | Refresh JWT token |
-| `/auth/jwt/verify/` | POST | Verify JWT token |
-| `/auth/users/reset_password/` | POST | Request password reset |
-| `/auth/users/activation/` | POST | Activate user account |
+| `/auth/jwt/refresh/` | POST | Refresh token |
+| `/auth/jwt/verify/` | POST | Verify token |
+| `/auth/users/reset_password/` | POST | Reset password |
+| `/auth/users/activation/` | POST | Activate account |
 
-## Running Tests
+---
+
+## Development
+
+### Running Tests
 
 ```bash
 # Run all tests
 python manage.py test
 
-# Run tests for specific app
+# Run specific app tests
 python manage.py test core_apps.user_auth
 python manage.py test core_apps.user_profile
-python manage.py test core_apps.common
 
-# Run with coverage
-pip install coverage
+# Run with coverage report
 coverage run --source='.' manage.py test
 coverage report -m
 ```
 
-## Logging
+### Useful Make Commands
 
-The application uses Loguru for advanced logging:
+```bash
+make build              # Build Docker images
+make up                 # Start services
+make down               # Stop services
+make makemigrations     # Create database migrations
+make migrate            # Apply migrations
+make shell              # Django shell
+```
 
-- **Console**: INFO level and above
-- **debug.log**: DEBUG level (rotates at 10MB, 30-day retention)
-- **error.log**: ERROR and CRITICAL with full backtrace
+### Logging
 
-Log files are stored in the `logs/` directory.
+Logs are managed by **Loguru** with three outputs:
+
+- **Console:** INFO level and above
+- **logs/debug.log:** DEBUG level (rotates at 10MB, 30-day retention)
+- **logs/error.log:** ERROR & CRITICAL with full backtrace
+
+---
 
 ## Production Deployment
 
-### Additional Production Dependencies
+### Environment Setup
+
+1. Create `.envs/.env.production` with production settings
+2. Set `DEBUG=False`
+3. Install production dependencies:
 
 ```bash
 pip install -r requirements/production.txt
 ```
 
-This includes:
-- **Gunicorn** - WSGI server
-- **Uvicorn** - ASGI server
-- **Sentry SDK** - Error tracking
-- **django-prometheus** - Monitoring
-- **django-redis** - Caching
-- **boto3 + django-storages** - AWS S3 storage
-- **django-health-check** - Health endpoints
+### Production Dependencies
 
-### Production Checklist
+- **Gunicorn** – WSGI server
+- **Uvicorn** – ASGI server (async support)
+- **Sentry SDK** – Error tracking
+- **django-prometheus** – Metrics
+- **django-redis** – Caching layer
+- **boto3 + django-storages** – AWS S3
+- **django-health-check** – Health check endpoints
 
-- [ ] Set `DEBUG=False`
-- [ ] Configure production database
-- [ ] Set up Redis for caching and Celery
-- [ ] Configure Sentry for error tracking
+### Deployment Checklist
+
+- [ ] Configure production database & Redis
+- [ ] Set up Sentry for error tracking
+- [ ] Configure email backend (SendGrid, AWS SES, etc.)
 - [ ] Set up SSL/TLS certificates
-- [ ] Configure CORS settings
-- [ ] Set up static file serving (WhiteNoise/CDN)
-- [ ] Configure email backend
+- [ ] Configure CORS & ALLOWED_HOSTS
+- [ ] Enable static file serving (WhiteNoise/CDN)
+- [ ] Set up monitoring & alerting
+- [ ] Run security checks (`python manage.py check --deploy`)
+- [ ] Create comprehensive test suite
+- [ ] Document API endpoints & workflows
+
+---
 
 ## Environment Variables Reference
 
@@ -247,29 +274,111 @@ This includes:
 | `DEBUG` | Debug mode (True/False) | Yes |
 | `SITE_NAME` | Application name | Yes |
 | `ADMIN_URL` | Admin panel URL path | Yes |
-| `DOMAIN` | Site domain | Yes |
-| `EMAIL_PORT` | SMTP port | Yes |
-| `EMAIL_HOST` | SMTP host | Yes |
-| `DEFAULT_FROM_EMAIL` | Default sender email | Yes |
+| `DOMAIN` | Application domain | Yes |
+| `EMAIL_HOST` | SMTP server | Yes |
+| `EMAIL_PORT` | SMTP port (usually 587) | Yes |
+| `DEFAULT_FROM_EMAIL` | Sender email address | Yes |
 | `POSTGRES_HOST` | Database host | Yes |
-| `POSTGRES_PORT` | Database port | Yes |
+| `POSTGRES_PORT` | Database port (5432) | Yes |
 | `POSTGRES_USER` | Database user | Yes |
 | `POSTGRES_DB` | Database name | Yes |
 | `POSTGRES_PASSWORD` | Database password | Yes |
-| `BANK_NAME` | Bank/fintech name | No |
+| `BANK_NAME` | Financial institution name | No |
+
+---
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+### Setting Up for Development
+
+```bash
+# Clone repository
+git clone <repository-url>
+cd fintech-banking-api
+
+# Create & activate virtual environment
+python -m venv .venv
+source .venv/bin/activate
+
+# Install development dependencies
+pip install -r requirements/local.txt
+
+# Copy environment template
+cp .envs/.env.example .envs/.env.local
+
+# Run migrations & start developing
+python manage.py migrate
+python manage.py runserver
+```
+
+### Submitting Changes
+
+1. Create a feature branch: `git checkout -b feature/your-feature`
+2. Make your changes and write tests
+3. Run the test suite: `python manage.py test`
+4. Commit with clear messages: `git commit -m "feat: add your feature"`
+5. Push to your fork: `git push origin feature/your-feature`
+6. Open a Pull Request to `main`
+
+### Code Style
+
+- Follow [PEP 8](https://pep8.org/)
+- Use meaningful variable names
+- Add docstrings to functions and classes
+- Keep functions small and focused
+
+---
+
+## Important Notes
+
+### Current State
+
+- **Early scaffold:** Core apps (`user_auth`, `user_profile`, `common`) are Django stubs ready for implementation
+- **Admin only:** `config/urls.py` currently routes only Django admin; API routes need to be wired
+- **PostgreSQL required:** Settings require PostgreSQL (no active SQLite fallback)
+- **Production settings:** `config/settings/production.py` is empty and ready for configuration
+
+### Known Requirements
+
+- **PostgreSQL:** Must have a running PostgreSQL instance
+- **Redis:** Needed for Celery broker (if using background tasks)
+- **Docker network:** External network `banker_local_nw` must be created for Docker setup
+
+### Environment Variable Gotchas
+
+- `DEBUG` is read as a **string** from env in `local.py` – handle accordingly
+- Environment files load from `.envs/.env.local` (not `.env`)
+- Docker entrypoint waits for PostgreSQL before starting the app
+
+---
+
+## Roadmap
+
+- [ ] Implement core banking operations (accounts, transactions)
+- [ ] Add payment processing integration
+- [ ] Create comprehensive test suite
+- [ ] Set up CI/CD pipeline
+- [ ] Implement rate limiting & throttling
+- [ ] Add webhook support for external integrations
+- [ ] Complete production settings configuration
+- [ ] Document API thoroughly
+
+---
+
+## Support & Issues
+
+For questions, bug reports, or feature requests:
+
+1. Check existing [GitHub Issues](https://github.com/your-repo/issues)
+2. Read [AGENTS.md](./AGENTS.md) for development guidelines
+3. Open a new issue with clear details
+
+---
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the **MIT License** – see [LICENSE](LICENSE) for details.
 
-## Support
+---
 
-For support, please open an issue in the GitHub repository.
+**Made with ❤️ for fintech builders**
