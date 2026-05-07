@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 from os import getenv, path
 from loguru import logger
 import sys
-from datetime import timedelta
+from datetime import timedelta,date
 import cloudinary
 
 
@@ -164,8 +164,13 @@ STATIC_ROOT = str(BASE_DIR / "staticfiles")
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-
 AUTH_USER_MODEL = "user_auth.User"
+
+DEFAULT_BIRTH_FIELD = date(1993, 09, 18)
+DEFAULT_DATE = date(2001, 1, 1)
+DEFAULT_EXPIRY_DATE = date(2024, 1, 1)
+DEFAULT_COUNTRY = "BD"
+DEFAULT_PHONENUMBER = "+8801670267006"
 
 REST_FRAMEWORK = {
     # YOUR SETTINGS
