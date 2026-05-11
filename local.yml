@@ -6,7 +6,7 @@ services:
       volumes:
         - .:/app:z
         # - ./staticfiles:/app/staticfiles
-        - app_logs:/app/logs
+        - ./logs:/app/logs:z
       # ports:
       #   - "8000:8000"
       expose:
