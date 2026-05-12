@@ -213,7 +213,18 @@ cloudinary.config(
     cloud_name = CLOUDINARY_CLOUD_NAME,
     api_key = CLOUDINARY_API_KEY,
     api_secret = "CLOUDINARY_API_SECERET",
- )
+)
+
+
+COOKIE_NAME = "access"
+
+COOKIE_SAMESITE = "Lax"
+
+COOKIE_PATH = "/"
+
+COOKIE_HTTPONLY = True
+
+COOKIE_SECURE = getenv("COOKIE_SECURE", "True") == "True"
 
 
 LOGGING_CONFIG = None
