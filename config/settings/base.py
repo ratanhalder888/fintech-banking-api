@@ -54,7 +54,6 @@ THIRD_PARTY_APPS = [
     "djoser",
     "cloudinary",
     "django_filters",
-    "djcelery_email",
     "django_celery_beat",
 ]
 
@@ -176,18 +175,15 @@ REST_FRAMEWORK = {
     # YOUR SETTINGS
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "core.apps.common.cookie_auth.CookieAuthentication",
+        "core_apps.common.cookie_auth.CookieAuthentication",
     ],
-    "DEFAULT_PEMISSION_CLASSES": [
+    "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
 
     ],
-    "DEFAULT_PAGINATION_CLASS": [
-        "rest_framework.pagination.PageNumberPagination",
-
-    ],
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "DEFAULT_FILTER_BACKENDS": [
-        "django_filters.rest_frramework.DjangoFilterBackend",
+        "django_filters.rest_framework.DjangoFilterBackend",
 
     ],
     "PAGE_SIZE": 10,
@@ -225,6 +221,14 @@ DJOSER = {
     "PASSWORD_RESET_CONFIRM_URL": "password-reset/{uid}/{token}",
     "SERIALIZERS": {
         "user_create": "core_apps.user_auth.serializers.UserCreateSerializer",
+    },
+    "EMAIL": {
+        "activation": "core_apps.user_auth.emails.ActivationEmail",
+        "confirmation": "core_apps.user_auth.emails.ConfirmationEmail",
+        "password_reset": "core_apps.user_auth.emails.PasswordResetEmail",
+        "password_changed_confirmation": "core_apps.user_auth.emails.PasswordChangedConfirmationEmail",
+        "username_changed_confirmation": "core_apps.user_auth.emails.UsernameChangedConfirmationEmail",
+        "username_reset": "core_apps.user_auth.emails.UsernameResetEmail",
     },
 }
 
