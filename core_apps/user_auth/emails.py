@@ -91,7 +91,7 @@ def send_otp_email(email, otp):
             "expiry_time" : settings.OTP_EXPIRATION,
             "site_name" : settings.SITE_NAME,
     }
-    html_email = render_to_string("core_apps/templates/emails/otp_email.html", context)
+    html_email = render_to_string("emails/otp_email.html", context)
     plain_email = strip_tags(html_email)
     
     send_email_task.delay(subject, plain_email, from_email, recipient_list, html_email)
@@ -106,7 +106,7 @@ def send_account_locked_email(user):
             "lockout_duration" : int(settings.LOCKOUT_DURATION.total_seconds() // 60),
             "site_name" : settings.SITE_NAME,
     }
-    html_email = render_to_string("core_apps/templates/emails/account_locked.html", context)
+    html_email = render_to_string("emails/account_locked.html", context)
     plain_email = strip_tags(html_email)
     
     send_email_task.delay(subject, plain_email, from_email, recipient_list, html_email)
