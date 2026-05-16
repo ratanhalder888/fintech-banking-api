@@ -13,23 +13,23 @@ class BaseDjoserEmailTask:
     def send(self, to, *args, **kwargs):
         self.render()
         subject = self.subject
+        # Djoser's body might be empty if we're not careful with context
         plain_email = self.body
-        html_email = self.html
+        html_email = getattr(self, "html", None)
+        
+        # Log for debugging
+        logger.info(f"Sending email task: Subject={subject}, To={to}, HasHTML={bool(html_email)}")
+        
         from_email = self.from_email
         send_email_task.delay(subject, plain_email, from_email, to, html_email)
 
 class ActivationEmail(BaseDjoserEmailTask):
-    template_name = "core_apps/templates/emails/activation_email.html"
-
     def __init__(self, *args, **kwargs):
         from djoser import email
+        # The path is relative to the directory in DIRS: /app/core_apps/templates
+        self.template_name = "emails/activation_email.html"
         self.__class__ = type('ActivationEmail', (BaseDjoserEmailTask, email.ActivationEmail), {})
         super(self.__class__, self).__init__(*args, **kwargs)
-
-    def get_context_data(self):
-        context = super().get_context_data()
-        # Ensure uid and token are explicitly available in the context for our custom template
-        return context
 
 class ConfirmationEmail(BaseDjoserEmailTask):
     def __init__(self, *args, **kwargs):
