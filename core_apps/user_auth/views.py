@@ -12,9 +12,9 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
+from drf_spectacular.utils import extend_schema
 from .emails import send_otp_email
-from .serializers import OTPSerializer
-from .utils import generate_otp
+from .serializers import OTPSerializer, UserCreateSerializer
 
 User = get_user_model()
 
@@ -148,6 +148,10 @@ class CustomTokenRefreshView(TokenRefreshView):
 class OTPVerifyView(APIView):
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(
+        request=OTPSerializer,
+        responses={200: Any},
+    )
     def post(self, request):
         serializer = OTPSerializer(data=request.data)
         if serializer.is_valid():
