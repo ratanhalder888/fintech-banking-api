@@ -15,6 +15,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from drf_spectacular.utils import extend_schema
 from .emails import send_otp_email
 from .serializers import OTPSerializer, UserCreateSerializer
+from .utils import generate_otp
 
 User = get_user_model()
 
