@@ -1,0 +1,1 @@
+{% load i18n %}{% trans "Your username has been changed on " %}{{ site_name }}

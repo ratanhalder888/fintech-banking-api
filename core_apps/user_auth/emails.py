@@ -42,9 +42,12 @@ class BaseDjoserEmailTask:
         # RE-GENERATE the URL to ensure it uses the NEW ACTIVATION_URL from settings
         from djoser.conf import settings as djoser_settings
         try:
-            context["url"] = djoser_settings.ACTIVATION_URL.format(**context)
+            if self.__class__.__name__ == "ActivationEmail":
+                context["url"] = djoser_settings.ACTIVATION_URL.format(**context)
+            elif self.__class__.__name__ == "PasswordResetEmail":
+                context["url"] = djoser_settings.PASSWORD_RESET_CONFIRM_URL.format(**context)
         except KeyError:
-            logger.warning("Could not format ACTIVATION_URL, check context keys")
+            logger.warning(f"Could not format URL for {self.__class__.__name__}, check context keys")
 
         try:
             html_email = render_to_string(self.template_name, context)

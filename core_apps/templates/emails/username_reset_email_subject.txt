@@ -1,0 +1,1 @@
+{% load i18n %}{% trans "Username reset on " %}{{ site_name }}
