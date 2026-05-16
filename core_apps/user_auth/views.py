@@ -13,6 +13,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from .emails import send_otp_email
+from .serializers import OTPSerializer
 from .utils import generate_otp
 
 User = get_user_model()
@@ -148,47 +149,44 @@ class OTPVerifyView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        otp = request.data.get("otp")
+        serializer = OTPSerializer(data=request.data)
+        if serializer.is_valid():
+            otp = serializer.validated_data.get("otp")
+            user = User.objects.filter(otp=otp, otp_expiry_time__gt=timezone.now()).first()
 
-        if not otp:
-            return Response(
-                {"error": "OTP is required"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        user = User.objects.filter(otp=otp, otp_expiry_time__gt=timezone.now()).first()
+            if not user:
+                return Response(
+                    {"error": "Invalid or expired OTP"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            
+            if user.is_locked_out:
+                return Response(
+                    {
+                        "error": f"Account is locked due to multiple failed login attempts. "
+                        f"Please try again after "
+                        f"{settings.LOCKOUT_DURATION.total_seconds() / 60} minutes "
+                    },
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            
+            user.verify_otp(otp)
 
-        if not user:
-            return Response(
-                {"error": "Invalid or expired OTP"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        
-        if user.is_locked_out:
-            return Response(
+            refresh = RefreshToken.for_user(user)
+            access_token = str(refresh.access_token)
+            refresh_token = str(refresh)
+
+            response = Response(
                 {
-                    "error": f"Account is locked due to multiple failed login attempts. "
-                    f"Please try again after "
-                    f"{settings.LOCKOUT_DURATION.total_seconds() / 60} minutes "
+                    "success": "Login successful. Now add your profile information, "
+                    "so that we can create an account for you"
                 },
-                status=status.HTTP_403_FORBIDDEN,
+                status=status.HTTP_200_OK,
             )
-        
-        user.verify_otp(otp)
-
-        refresh = RefreshToken.for_user(user)
-        access_token = str(refresh.access_token)
-        refresh_token = str(refresh)
-
-        response = Response(
-            {
-                "success": "Login successful. Now add your profile information, "
-                "so that we can create an account for you"
-            },
-            status=status.HTTP_200_OK,
-        )
-        set_auth_cookies(response, access_token, refresh_token)
-        logger.info(f"Successful login with OTP: {user.email}")
-        return response
+            set_auth_cookies(response, access_token, refresh_token)
+            logger.info(f"Successful login with OTP: {user.email}")
+            return response
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LogoutAPIView(APIView):
