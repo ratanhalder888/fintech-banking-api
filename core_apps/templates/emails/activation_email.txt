@@ -1,0 +1,14 @@
+{% blocktrans %}You're receiving this email because you need to finish activation process on {{ site_name }}.{% endblocktrans %}
+
+{% trans "Activation Credentials (for API testing):" %}
+UID: {{ uid }}
+Token: {{ token }}
+
+{% trans "Please use the link below to activate your account:" %}
+
+{{ protocol }}://{{ domain }}/{{ url }}
+
+{% blocktrans %}If you did not request this, please ignore this email.{% endblocktrans %}
+
+{% trans "Thanks for using our site!" %}
+{% blocktrans %}The {{ site_name }} team{% endblocktrans %}

@@ -19,10 +19,17 @@ class BaseDjoserEmailTask:
         send_email_task.delay(subject, plain_email, from_email, to, html_email)
 
 class ActivationEmail(BaseDjoserEmailTask):
+    template_name = "core_apps/templates/emails/activation_email.html"
+
     def __init__(self, *args, **kwargs):
         from djoser import email
         self.__class__ = type('ActivationEmail', (BaseDjoserEmailTask, email.ActivationEmail), {})
         super(self.__class__, self).__init__(*args, **kwargs)
+
+    def get_context_data(self):
+        context = super().get_context_data()
+        # Ensure uid and token are explicitly available in the context for our custom template
+        return context
 
 class ConfirmationEmail(BaseDjoserEmailTask):
     def __init__(self, *args, **kwargs):
