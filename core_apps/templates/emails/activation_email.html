@@ -10,7 +10,7 @@
     <p><strong>Token:</strong> {{ token }}</p>
 </div>
 
-<p>{% trans "Alternatively, you can click the button below to activate your account:" %}</p>
+<p>{% trans "Alternatively, you can click the button below to activate your account (Note: This will perform a GET request, but the API expects a POST. For testing, please use the UID and Token above in Swagger):" %}</p>
 
 <a href="{{ protocol }}://{{ domain }}/{{ url }}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
     {% trans "Activate Account" %}

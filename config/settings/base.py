@@ -217,8 +217,8 @@ DJOSER = {
     "SEND_ACTIVATION_EMAIL": True,
     "PASSWORD_CHANGED_EMAIL_CONFIRMATION": True,
     "PASSWORD_RESET_CONFIRM_RETYPE": True,
-    "ACTIVATION_URL": "activate/{uid}/{token}",
-    "PASSWORD_RESET_CONFIRM_URL": "password-reset/{uid}/{token}",
+    "ACTIVATION_URL": "/api/v1/auth/users/activation/{uid}/{token}/",
+    "PASSWORD_RESET_CONFIRM_URL": "/api/v1/auth/password-reset/{uid}/{token}/",
     "SERIALIZERS": {
         "user_create": "core_apps.user_auth.serializers.UserCreateSerializer",
     },

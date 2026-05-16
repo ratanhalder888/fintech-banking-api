@@ -5,61 +5,81 @@ from django.utils.translation import gettext_lazy as _
 from loguru import logger
 from core_apps.common.tasks import send_email_task
 
-def get_email_base():
-    from djoser import email
-    return email.BaseEmailMessage
-
 class BaseDjoserEmailTask:
-    def send(self, to, *args, **kwargs):
-        self.render()
-        subject = self.subject
-        # Djoser's body might be empty if we're not careful with context
-        plain_email = self.body
-        html_email = getattr(self, "html", None)
+    """
+    Base class for Djoser emails that routes to Celery.
+    Does NOT inherit from djoser.email classes directly to avoid AppRegistry errors.
+    """
+    def __init__(self, request, context):
+        self.request = request
+        self.context = context
+
+    def send(self, to):
+        context = self.context
         
-        # Log for debugging
-        logger.info(f"Sending email task: Subject={subject}, To={to}, HasHTML={bool(html_email)}")
+        # Ensure base context is present
+        context.update({
+            "site_name": settings.SITE_NAME,
+            "protocol": "https" if self.request.is_secure() else "http",
+            "domain": getattr(settings, "DOMAIN", self.request.get_host()),
+        })
+
+        # Djoser context data usually has 'uid' and 'token'
+        if "uid" not in context or not context["uid"]:
+            if "user" in context:
+                from djoser import utils
+                context["uid"] = utils.encode_uid(context["user"].pk)
+            elif "user_id" in context:
+                from djoser import utils
+                context["uid"] = utils.encode_uid(context["user_id"])
         
-        from_email = self.from_email
-        send_email_task.delay(subject, plain_email, from_email, to, html_email)
+        if "token" not in context or not context["token"]:
+            from django.contrib.auth.tokens import default_token_generator
+            user = context.get("user")
+            if user:
+                context["token"] = default_token_generator.make_token(user)
+
+        # RE-GENERATE the URL to ensure it uses the NEW ACTIVATION_URL from settings
+        from djoser.conf import settings as djoser_settings
+        try:
+            context["url"] = djoser_settings.ACTIVATION_URL.format(**context)
+        except KeyError:
+            logger.warning("Could not format ACTIVATION_URL, check context keys")
+
+        try:
+            html_email = render_to_string(self.template_name, context)
+            plain_email = strip_tags(html_email)
+            subject = render_to_string(self.subject_template_name, context).replace("\n", "").replace("\r", "")
+            
+            from_email = settings.DEFAULT_FROM_EMAIL
+            send_email_task.delay(subject, plain_email, from_email, to, html_email)
+            logger.info(f"Queued email task: {self.__class__.__name__} to {to}")
+        except Exception as e:
+            logger.error(f"Error rendering/queueing email {self.__class__.__name__}: {e}")
 
 class ActivationEmail(BaseDjoserEmailTask):
-    def __init__(self, *args, **kwargs):
-        from djoser import email
-        # The path is relative to the directory in DIRS: /app/core_apps/templates
-        self.template_name = "emails/activation_email.html"
-        self.__class__ = type('ActivationEmail', (BaseDjoserEmailTask, email.ActivationEmail), {})
-        super(self.__class__, self).__init__(*args, **kwargs)
+    template_name = "emails/activation_email.html"
+    subject_template_name = "emails/activation_email_subject.txt"
 
 class ConfirmationEmail(BaseDjoserEmailTask):
-    def __init__(self, *args, **kwargs):
-        from djoser import email
-        self.__class__ = type('ConfirmationEmail', (BaseDjoserEmailTask, email.ConfirmationEmail), {})
-        super(self.__class__, self).__init__(*args, **kwargs)
+    template_name = "emails/confirmation_email.html"
+    subject_template_name = "emails/confirmation_email_subject.txt"
 
 class PasswordResetEmail(BaseDjoserEmailTask):
-    def __init__(self, *args, **kwargs):
-        from djoser import email
-        self.__class__ = type('PasswordResetEmail', (BaseDjoserEmailTask, email.PasswordResetEmail), {})
-        super(self.__class__, self).__init__(*args, **kwargs)
+    template_name = "emails/password_reset_email.html"
+    subject_template_name = "emails/password_reset_email_subject.txt"
 
 class PasswordChangedConfirmationEmail(BaseDjoserEmailTask):
-    def __init__(self, *args, **kwargs):
-        from djoser import email
-        self.__class__ = type('PasswordChangedConfirmationEmail', (BaseDjoserEmailTask, email.PasswordChangedConfirmationEmail), {})
-        super(self.__class__, self).__init__(*args, **kwargs)
+    template_name = "emails/password_changed_confirmation_email.html"
+    subject_template_name = "emails/password_changed_confirmation_email_subject.txt"
 
 class UsernameChangedConfirmationEmail(BaseDjoserEmailTask):
-    def __init__(self, *args, **kwargs):
-        from djoser import email
-        self.__class__ = type('UsernameChangedConfirmationEmail', (BaseDjoserEmailTask, email.UsernameChangedConfirmationEmail), {})
-        super(self.__class__, self).__init__(*args, **kwargs)
+    template_name = "emails/username_changed_confirmation_email.html"
+    subject_template_name = "emails/username_changed_confirmation_email_subject.txt"
 
 class UsernameResetEmail(BaseDjoserEmailTask):
-    def __init__(self, *args, **kwargs):
-        from djoser import email
-        self.__class__ = type('UsernameResetEmail', (BaseDjoserEmailTask, email.UsernameResetEmail), {})
-        super(self.__class__, self).__init__(*args, **kwargs)
+    template_name = "emails/username_reset_email.html"
+    subject_template_name = "emails/username_reset_email_subject.txt"
 
 
 def send_otp_email(email, otp):
