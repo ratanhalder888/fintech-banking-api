@@ -13,6 +13,7 @@ djangorestframework-simplejwt==5.5.1
 djoser==2.3.3
 social-auth-app-django==5.7.0
 social-auth-core==4.8.5
+django-cors-headers==4.9.0
 
 # API Documentation
 drf-spectacular==0.29.0
