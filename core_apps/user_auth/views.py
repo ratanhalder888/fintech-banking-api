@@ -9,6 +9,7 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from rest_framework.request import Request
 from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -196,6 +197,14 @@ class OTPVerifyView(APIView):
 
 class LogoutAPIView(APIView):
     def post(self, request, *args, **kwargs):
+        refresh_token = request.COOKIES.get("refresh") or request.data.get("refresh")
+
+        if refresh_token:
+            try:
+                RefreshToken(refresh_token).blacklist()
+            except TokenError:
+                logger.warning("Logout requested with an invalid or already blacklisted refresh token")
+
         response = Response(status=status.HTTP_204_NO_CONTENT)
         response.delete_cookie("access")
         response.delete_cookie("refresh")

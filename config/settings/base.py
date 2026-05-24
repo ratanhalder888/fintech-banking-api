@@ -52,9 +52,11 @@ THIRD_PARTY_APPS = [
     "phonenumber_field",
     "drf_spectacular",
     "djoser",
+    "corsheaders",
     "cloudinary",
     "django_filters",
     "django_celery_beat",
+    "rest_framework_simplejwt.token_blacklist",
 ]
 
 LOCAL_APPS = ["core_apps.user_auth","core_apps.user_profile","core_apps.common"]
@@ -63,6 +65,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -204,6 +207,7 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",
 }
@@ -282,6 +286,14 @@ COOKIE_PATH = "/"
 COOKIE_HTTPONLY = True
 
 COOKIE_SECURE = getenv("COOKIE_SECURE", "True") == "True"
+
+CORS_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in getenv("CORS_ALLOWED_ORIGINS", "http://localhost:8080").split(",")
+    if origin.strip()
+]
+
+CORS_ALLOW_CREDENTIALS = getenv("CORS_ALLOW_CREDENTIALS", "True") == "True"
 
 
 LOGGING_CONFIG = None
