@@ -10,7 +10,6 @@ from loguru import logger
 
 @shared_task(name="upload_photos_to_cloudinary")
 def upload_photos_to_cloudinary(profile_id: UUID, photos: dict) -> None:
-    try:
         profile_model = apps.get_model("user_profile", "Profile")
         profile = profile_model.objects.get(id=profile_id)
 
@@ -35,4 +34,5 @@ def upload_photos_to_cloudinary(profile_id: UUID, photos: dict) -> None:
             if photo_data["type"] == "file" and default_storage.exists(
                 photo_data["path"]
             ):
-                default_storage.delete(photo_data["path"])
+                default_storage.delete(photo_data["path"])try:
+    
