@@ -11,7 +11,7 @@ from phonenumber_field.serializerfields import PhoneNumberField
 from rest_framework import serializers
 
 from core_apps.common.models import ContentView
-from core_apps.accounts.models import BankAccount
+# from core_apps.accounts.models import BankAccount
 from .models import Profile, NextOfKin
 from .tasks import upload_photos_to_cloudinary
 
@@ -64,10 +64,10 @@ class ProfileSerializer(serializers.ModelSerializer):
     id_photo_url = serializers.URLField(read_only=True)
     signature_photo_url = serializers.URLField(read_only=True)
     view_count = serializers.SerializerMethodField()
-    account_currency = serializers.ChoiceField(
-        choices=BankAccount.AccountCurrency.choices
-    )
-    account_type = serializers.ChoiceField(choices=BankAccount.AccountType.choices)
+    # account_currency = serializers.ChoiceField(
+    #     choices=BankAccount.AccountCurrency.choices
+    # )
+    # account_type = serializers.ChoiceField(choices=BankAccount.AccountType.choices)
 
     class Meta:
         model = Profile
@@ -113,8 +113,8 @@ class ProfileSerializer(serializers.ModelSerializer):
             "signature_photo",
             "signature_photo_url",
             "view_count",
-            "account_currency",
-            "account_type",
+            # "account_currency",
+            # "account_type",
         ]
         read_only_fields = [
             "user",
@@ -185,3 +185,29 @@ class ProfileSerializer(serializers.ModelSerializer):
         return ContentView.objects.filter(
             content_type=content_type, object_id=obj.id
         ).count()
+    
+
+class ProfileListSerializer(serializers.ModelSerializer):
+    full_name = serializers.ReadOnlyField(source="user.full_name")
+    username = serializers.ReadOnlyField(source="user.username")
+    email = serializers.EmailField(source="user.email", read_only=True)
+    photo = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Profile
+        fields = [
+            "full_name",
+            "username",
+            "gender",
+            "nationality",
+            "country_of_birth",
+            "email",
+            "phone_number",
+            "photo",
+        ]
+
+    def get_photo(self, obj: Profile) -> str | None:
+        try:
+            return obj.photo.url
+        except AttributeError:
+            return None
