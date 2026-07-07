@@ -100,7 +100,6 @@ class Profile(TimeStampedModel):
                 raise ValidationError(_("ID expiry date must come after issue date."))
     
     def save(self, *args: Any, **kwargs: Any) -> None:
-        self.full_clean()
         super().save(*args, **kwargs)
 
     def is_complete_with_next_of_kin(self):
@@ -171,7 +170,6 @@ class NextOfKin(TimeStampedModel):
                 raise ValidationError(_("There can only be one primary next of kin."))
             
     def save(self, *args: Any, **kwargs: Any) -> None:
-        self.full_clean()
         super().save(*args, **kwargs)
 
     def __str__(self) -> str:

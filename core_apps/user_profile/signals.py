@@ -15,7 +15,7 @@ def create_user_profile(
     ) -> None:
     if created:
         Profile.objects.create(user=instance)
-        logger.info(f"Profile created for {instance.first_name} {instance.last_name}")
+        logger.info(f"Profile created for {instance.first_name}{instance.last_name}")
 
 
 @receiver(post_save, sender=AUTH_USER_MODEL)
