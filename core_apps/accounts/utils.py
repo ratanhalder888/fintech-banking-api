@@ -112,5 +112,5 @@ def create_bank_account(user, currency: str, account_type: str) -> BankAccount:
     transaction.on_commit(
         lambda: send_account_creation_email(user, bank_account)
     )
-    
+
     return bank_account
