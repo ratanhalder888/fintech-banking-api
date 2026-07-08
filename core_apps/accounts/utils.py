@@ -55,7 +55,7 @@ def generate_account_number(currency: str) -> str:
     
     prefix = f"{bank_code}{branch_code}{currency_code}"
     remaining_digits = 16 - len(prefix) - 1
-    
+
     next_id = get_next_sequence_value()
     sequence_digits = str(next_id).zfill(remaining_digits)
     
@@ -82,3 +82,35 @@ def calculate_luhn_check_digit(number: str) -> int:
         total += sum(split_into_digits(doubled))
 
     return (10 - (total % 10)) % 10
+
+
+def create_bank_account(user, currency: str, account_type: str) -> BankAccount:
+    """Create a BankAccount with a guaranteed-unique sequence-based account number."""
+
+    with transaction.atomic():
+        # NEXTVAL guarantees uniqueness — no collision check needed
+        account_number = generate_account_number(currency)
+
+        # select_for_update prevents race when two requests see no accounts
+        bank_accounts_exist = (
+            BankAccount.objects
+            .filter(user=user)
+            .select_for_update()
+            .exists()
+        )
+        is_primary = not bank_accounts_exist
+
+        bank_account = BankAccount.objects.create(
+            user=user,
+            account_number=account_number,
+            currency=currency,
+            account_type=account_type,
+            is_primary=is_primary,
+        )
+
+    # Email OUTSIDE atomic block — SMTP failure won't roll back the account
+    transaction.on_commit(
+        lambda: send_account_creation_email(user, bank_account)
+    )
+    
+    return bank_account
