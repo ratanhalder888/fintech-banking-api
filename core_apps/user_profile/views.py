@@ -15,8 +15,8 @@ from rest_framework.request import Request
 
 from core_apps.common.models import ContentView
 from core_apps.common.permissions import IsBranchManager
-# from core_apps.accounts.utils import create_bank_account
-# from core_apps.accounts.models import BankAccount
+from core_apps.accounts.utils import create_bank_account
+from core_apps.accounts.models import BankAccount
 from core_apps.common.renderers import GenericJSONRenderer
 from .models import NextOfKin, Profile
 from .serializers import NextOfKinSerializer, ProfileListSerializer, ProfileSerializer
@@ -102,9 +102,9 @@ class ProfileDetailAPIView(generics.RetrieveUpdateAPIView):
 
                 if updated_instance.is_complete_with_next_of_kin():
                     existing_account = BankAccount.objects.filter(
-                        user=request.user,
-                        currency=updated_instance.account_currency,
-                        account_type=updated_instance.account_type,
+                        user = request.user,
+                        currency = updated_instance.account_currency,
+                        account_type = updated_instance.account_type,
                     ).first()
 
                     if not existing_account:
