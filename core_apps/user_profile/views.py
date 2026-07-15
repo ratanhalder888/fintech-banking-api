@@ -13,6 +13,9 @@ from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.request import Request
 
+from drf_spectacular.utils import OpenApiTypes, extend_schema
+from drf_spectacular.utils import extend_schema_view
+
 from core_apps.common.models import ContentView
 from core_apps.common.permissions import IsBranchManager
 from core_apps.accounts.utils import create_bank_account
@@ -48,6 +51,18 @@ class ProfileListAPIView(generics.ListAPIView):
 
 
 
+@extend_schema_view(
+    partial_update=extend_schema(
+        request={
+            "multipart/form-data": ProfileSerializer,
+        },
+    ),
+    update=extend_schema(
+        request={
+            "multipart/form-data": ProfileSerializer,
+        },
+    ),
+)
 class ProfileDetailAPIView(generics.RetrieveUpdateAPIView):
     serializer_class = ProfileSerializer
     parser_classes = [MultiPartParser, FormParser, JSONParser]
