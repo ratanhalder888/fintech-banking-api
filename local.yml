@@ -115,6 +115,7 @@ services:
 networks:
   banker_local_nw:
     external: true
+    #driver: bridge ## in production no create network in manually
 
 volumes:
   banker_local_db:
