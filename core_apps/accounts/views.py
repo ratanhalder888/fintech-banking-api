@@ -5,6 +5,7 @@ from rest_framework import generics,status
 from rest_framework.request import Request
 from rest_framework.response import Response
 from core_apps.common.permissions import IsAccountExecutive, IsBranchManager
+from rest_framework.permissions import IsAdminUser
 from core_apps.common.renderers import GenericJSONRenderer
 from .emails import send_full_activation_email
 from .models import BankAccount
@@ -16,7 +17,7 @@ class AccountVerificationView(generics.UpdateAPIView):
     serializer_class = AccountVerificationSerializer
     renderer_classes = [GenericJSONRenderer]
     object_label = "verification"
-    permission_classes = [IsAccountExecutive,IsBranchManager]
+    permission_classes = [IsAdminUser | IsAccountExecutive | IsBranchManager]
 
     def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         instance = self.get_object()
