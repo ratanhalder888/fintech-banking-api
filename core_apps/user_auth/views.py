@@ -1,9 +1,7 @@
 from typing import Any, Optional
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.utils import timezone
-from djoser.views import TokenCreateView
-from djoser.views import User
 from loguru import logger
 from rest_framework import permissions, status
 from rest_framework.response import Response
@@ -14,16 +12,28 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from drf_spectacular.utils import extend_schema
-from .emails import send_otp_email
-from .serializers import OTPSerializer, UserCreateSerializer
-from .utils import generate_otp
+from .serializers import OTPSerializer
+from .services import (
+    AccountLockedError,
+    InvalidCredentialsError,
+    InvalidOTPError,
+    LoginError,
+    OTPExpiredError,
+    login_initiate,
+    otp_verify,
+)
 
 User = get_user_model()
 
 
+# ------------------------------------------------------------------
+# Cookie helpers (pure HTTP concern — stays in the view layer)
+# ------------------------------------------------------------------
+
 def set_auth_cookies(
     response: Response, access_token: str, refresh_token: Optional[str] = None
 ) -> None:
+    """Set JWT cookies on the response object."""
     access_token_lifetime = settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"].total_seconds()
     cookie_settings = {
         "path": settings.COOKIE_PATH,
@@ -47,71 +57,85 @@ def set_auth_cookies(
     response.set_cookie("logged_in", "true", **logged_in_cookie_settings)
 
 
+# ------------------------------------------------------------------
+# Views (thin — HTTP concerns only, no business logic)
+# ------------------------------------------------------------------
 
-class CustomTokenCreateView(TokenCreateView):
-    def _action(self, serializer):
-        user = serializer.user
-        if user.is_locked_out:
+class LoginView(APIView):
+    """
+    POST /api/v1/auth/login/
+
+    Validates email + password and sends an OTP to the user's email.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request: Request) -> Response:
+        email = request.data.get("email")
+        password = request.data.get("password")
+
+        try:
+            result = login_initiate(email=email, password=password)
+        except InvalidCredentialsError as e:
             return Response(
-                {
-                    "error": f"Account is locked due to multiple failed login attempts. Please "
-                    f"try again after {settings.LOCKOUT_DURATION.total_seconds() / 60} minutes. ",
-                },
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        except AccountLockedError as e:
+            return Response(
+                {"error": str(e)},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        user.reset_failed_login_attempts()
-
-        otp = generate_otp()
-        user.set_otp(otp)
-        send_otp_email(user.email, otp)
-
-        logger.info(f"OTP sent for login to user: {user.email}")
 
         return Response(
+            {"success": "OTP sent to your email", "email": result.email},
+            status=status.HTTP_200_OK,
+        )
+
+
+class OTPVerifyView(APIView):
+    """
+    POST /api/v1/auth/verify-otp/
+
+    Validates the OTP and returns JWT tokens (set as httpOnly cookies).
+    """
+    permission_classes = [permissions.AllowAny]
+
+    @extend_schema(
+        request=OTPSerializer,
+        responses={200: Any},
+    )
+    def post(self, request: Request) -> Response:
+        serializer = OTPSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            result = otp_verify(otp=serializer.validated_data["otp"])
+        except InvalidOTPError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except OTPExpiredError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except AccountLockedError as e:
+            return Response({"error": str(e)}, status=status.HTTP_403_FORBIDDEN)
+
+        response = Response(
             {
-                "success": "OTP sent to your email",
-                "email": user.email,
+                "success": "Login successful. Now add your profile information, "
+                "so that we can create an account for you",
             },
             status=status.HTTP_200_OK,
         )
-    
-
-    def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        serializer = self.get_serializer(data=request.data)
-
-        try:
-            serializer.is_valid(raise_exception=True)
-        except Exception:
-            email = request.data.get("email")
-            user = User.objects.filter(email=email).first()
-            if user:
-                user.handle_failed_login_attempts()
-                failed_attempts = user.failed_login_attempts
-                logger.error(
-                    f"Failed login attempts: {failed_attempts}  for user: {email}"
-                )
-                if failed_attempts >= settings.LOGIN_ATTEMPTS:
-                    return Response(
-                        {
-                            "error": f"You have exceeded the maximum number of login attempts. "
-                            f"Your account has been locked for "
-                            f"{settings.LOCKOUT_DURATION.total_seconds() / 60} minutes. "
-                            f"An email has been sent to you with further instructions",
-                        },
-                        status=status.HTTP_403_FORBIDDEN,
-                    )
-            else:
-                logger.error(f"Failed login attempt for non-existent user: {email}")
-
-            return Response(
-                {"error": "Your Login Credentials are not correct"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        return self._action(serializer)
-    
+        set_auth_cookies(
+            response,
+            access_token=result.access_token,
+            refresh_token=result.refresh_token,
+        )
+        return response
 
 
 class CustomTokenRefreshView(TokenRefreshView):
+    """POST /api/v1/auth/refresh/"""
+
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         refresh_token = request.COOKIES.get("refresh")
 
@@ -135,75 +159,28 @@ class CustomTokenRefreshView(TokenRefreshView):
                 refresh_res.data.pop("refresh", None)
 
                 refresh_res.data["message"] = "Access tokens refreshed successfully."
-
             else:
-                refresh_res.data["message"] = (
-                    "Access or refresh token not found in refresh response data"
-                )
                 logger.error(
                     "Access or refresh token not found in refresh response data"
                 )
 
         return refresh_res
-    
-
-class OTPVerifyView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    @extend_schema(
-        request=OTPSerializer,
-        responses={200: Any},
-    )
-    def post(self, request):
-        serializer = OTPSerializer(data=request.data)
-        if serializer.is_valid():
-            otp = serializer.validated_data.get("otp")
-            user = User.objects.filter(otp=otp, otp_expiry_time__gt=timezone.now()).first()
-
-            if not user:
-                return Response(
-                    {"error": "Invalid or expired OTP"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-            
-            if user.is_locked_out:
-                return Response(
-                    {
-                        "error": f"Account is locked due to multiple failed login attempts. "
-                        f"Please try again after "
-                        f"{settings.LOCKOUT_DURATION.total_seconds() / 60} minutes "
-                    },
-                    status=status.HTTP_403_FORBIDDEN,
-                )
-            
-            user.verify_otp(otp)
-
-            refresh = RefreshToken.for_user(user)
-            access_token = str(refresh.access_token)
-            refresh_token = str(refresh)
-
-            response = Response(
-                {
-                    "success": "Login successful. Now add your profile information, "
-                    "so that we can create an account for you"
-                },
-                status=status.HTTP_200_OK,
-            )
-            set_auth_cookies(response, access_token, refresh_token)
-            logger.info(f"Successful login with OTP: {user.email}")
-            return response
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LogoutAPIView(APIView):
-    def post(self, request, *args, **kwargs):
+    """POST /api/v1/auth/logout/"""
+
+    def post(self, request: Request) -> Response:
         refresh_token = request.COOKIES.get("refresh") or request.data.get("refresh")
 
         if refresh_token:
             try:
                 RefreshToken(refresh_token).blacklist()
             except TokenError:
-                logger.warning("Logout requested with an invalid or already blacklisted refresh token")
+                logger.warning(
+                    "Logout requested with an invalid or already blacklisted "
+                    "refresh token"
+                )
 
         response = Response(status=status.HTTP_204_NO_CONTENT)
         response.delete_cookie("access")
