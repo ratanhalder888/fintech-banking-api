@@ -164,6 +164,11 @@ SITE_ID = 1
 STATIC_URL = '/static/'
 STATIC_ROOT = str(BASE_DIR / "staticfiles")
 
+MEDIA_URL = "/media/"
+MEDIA_ROOT = str(BASE_DIR / "media")
+
+MAX_UPLOAD_SIZE = 1 * 1024 * 1024
+
 # Default primary key field type
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "user_auth.User"

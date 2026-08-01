@@ -37,9 +37,9 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 
 RUN addgroup --system django && \
     adduser --system --ingroup django django && \
-    mkdir -p ${APP_HOME}/staticfiles ${APP_HOME}/logs && \
-    chown -R django:django ${APP_HOME}/staticfiles ${APP_HOME}/logs && \
-    chmod -R 775 ${APP_HOME}/staticfiles ${APP_HOME}/logs
+    mkdir -p ${APP_HOME}/staticfiles ${APP_HOME}/logs ${APP_HOME}/media && \
+    chown -R django:django ${APP_HOME}/staticfiles ${APP_HOME}/logs ${APP_HOME}/media && \
+    chmod -R 775 ${APP_HOME}/staticfiles ${APP_HOME}/logs ${APP_HOME}/media
 
 COPY --from=python-build-stage /usr/src/app/wheels /wheels/
 

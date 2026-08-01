@@ -5,6 +5,7 @@ services:
         dockerfile: ./docker/local/django/Dockerfile
       volumes:
         - .:/app:z
+        - banker_local_media:/app/media
         # - ./staticfiles:/app/staticfiles
         - ./logs:/app/logs:z
       # ports:
@@ -136,6 +137,7 @@ networks:
 
 volumes:
   banker_local_db:
+  banker_local_media:
   banker_mailpit_db:
   app_logs:
   logs_store:

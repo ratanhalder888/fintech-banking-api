@@ -28,8 +28,6 @@ EMAIL_PORT = 1025
 DEFAULT_FROM_EMAIL = getenv("DEFAULT_FROM_EMAIL")
 DOMAIN = getenv("DOMAIN")
 
-MAX_UPLOAD_SIZE = 1 * 1024 * 1024
-
 CSRF_TRUSTED_ORIGINS = ["http://localhost:8080", "http://127.0.0.1:8080"]
 
 LOCKOUT_DURATION = timedelta(minutes=1)
