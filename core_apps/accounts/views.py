@@ -138,3 +138,8 @@ class DepositView(generics.CreateAPIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
+
+class InitiateWithdrawalView(generics.CreateAPIView):
+    # serializer_class = TransactionSerializer
+    renderer_classes = [GenericJSONRenderer]
+    object_label = "initiate_withdrawal"
