@@ -1,11 +1,11 @@
-import base64
 from typing import Any, Dict
+from uuid import uuid4
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
-from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+from django.db import transaction
 from django_countries.serializer_fields import CountryField
 from phonenumber_field.serializerfields import PhoneNumberField
 from rest_framework import serializers
@@ -21,6 +21,14 @@ User = get_user_model()
 class UUIDField(serializers.Field):
     def to_representation(self, value: str) -> str:
         return str(value)
+
+
+def validate_photo_size(file):
+    if file.size > settings.MAX_UPLOAD_SIZE:
+        raise serializers.ValidationError(
+            f"File size must not exceed {settings.MAX_UPLOAD_SIZE} bytes."
+        )
+    return file
 
 
 class NextOfKinSerializer(serializers.ModelSerializer):
@@ -56,9 +64,15 @@ class ProfileSerializer(serializers.ModelSerializer):
     country = CountryField(name_only=True)
     phone_number = PhoneNumberField()
     next_of_kin = NextOfKinSerializer(many=True, read_only=True)
-    photo = serializers.ImageField(write_only=True, required=False)
-    id_photo = serializers.ImageField(write_only=True, required=False)
-    signature_photo = serializers.ImageField(write_only=True, required=False)
+    photo = serializers.ImageField(
+        write_only=True, required=False, validators=[validate_photo_size]
+    )
+    id_photo = serializers.ImageField(
+        write_only=True, required=False, validators=[validate_photo_size]
+    )
+    signature_photo = serializers.ImageField(
+        write_only=True, required=False, validators=[validate_photo_size]
+    )
 
     photo_url = serializers.URLField(read_only=True)
     id_photo_url = serializers.URLField(read_only=True)
@@ -159,16 +173,10 @@ class ProfileSerializer(serializers.ModelSerializer):
         for field in ["photo", "id_photo", "signature_photo"]:
             if field in validated_data:
                 photo = validated_data.pop(field)
-                if photo.size > settings.MAX_UPLOAD_SIZE:
-                    temp_file = default_storage.save(
-                        f"temp_{instance.id}_{field}.jpg", ContentFile(photo.read())
-                    )
-                    temp_file_path = default_storage.path(temp_file)
-                    photos_to_upload[field] = {"type": "file", "path": temp_file_path}
-                else:
-                    image_content = photo.read()
-                    encoded_image = base64.b64encode(image_content).decode("utf-8")
-                    photos_to_upload[field] = {"type": "base64", "data": encoded_image}
+                name = default_storage.save(
+                    f"temp/{instance.id}/{uuid4().hex}.{field}.jpg", photo
+                )
+                photos_to_upload[field] = {"type": "file", "name": name}
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -176,7 +184,11 @@ class ProfileSerializer(serializers.ModelSerializer):
         instance.save()
 
         if photos_to_upload:
-            upload_photos_to_cloudinary.delay(str(instance.id), photos_to_upload)
+            transaction.on_commit(
+                lambda: upload_photos_to_cloudinary.delay(
+                    str(instance.id), photos_to_upload
+                )
+            )
 
         return instance
 
