@@ -89,6 +89,7 @@ services:
   celeryworker:
     <<: *api
     command: /start-celeryworker.sh
+    mem_limit: 2g
 
 
   flower:
