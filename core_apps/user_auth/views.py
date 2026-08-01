@@ -12,7 +12,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
 from drf_spectacular.utils import extend_schema
-from .serializers import OTPSerializer
+from .serializers import LoginSerializer, OTPSerializer
 from .services import (
     AccountLockedError,
     InvalidCredentialsError,
@@ -69,12 +69,19 @@ class LoginView(APIView):
     """
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(
+        request=LoginSerializer,
+        responses={200: Any, 400: Any, 403: Any},
+    )
     def post(self, request: Request) -> Response:
-        email = request.data.get("email")
-        password = request.data.get("password")
+        serializer = LoginSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
         try:
-            result = login_initiate(email=email, password=password)
+            result = login_initiate(
+                email=serializer.validated_data["email"],
+                password=serializer.validated_data["password"],
+            )
         except InvalidCredentialsError as e:
             return Response(
                 {"error": str(e)},
