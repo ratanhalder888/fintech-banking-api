@@ -47,7 +47,7 @@ CELERY_RESULT_BACKEND = "cache+memory://"
 # Dummy values for external services
 CLOUDINARY_CLOUD_NAME = "test"
 CLOUDINARY_API_KEY = "test"
-CLOUDINARY_API_SECERET = "test"
+CLOUDINARY_API_SECRET = "test"
 SITE_NAME = "testbank"
 DOMAIN = "localhost:8000"
 ADMIN_URL = "admin/"
