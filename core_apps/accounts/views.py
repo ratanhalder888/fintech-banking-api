@@ -77,7 +77,7 @@ class DepositView(generics.CreateAPIView):
     serializer_class = DepositSerializer
     renderer_classes = [GenericJSONRenderer]
     object_label = "deposit"
-    permission_classes = [IsTeller]
+    permission_classes = [IsTeller | IsAdminUser | IsAccountExecutive | IsBranchManager]
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         account_number = request.query_params.get("account_number")
