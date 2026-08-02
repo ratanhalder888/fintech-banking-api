@@ -22,6 +22,8 @@ Banker collapses that to zero. Clone → one `make build` command → hit `http:
 - JWT stored in HTTP-only `access`/`refresh` cookies
 - Account lockout after failed logins
 - User roles (Customer, Teller, Account Executive, Branch Manager)
+- Bank accounts with deposits and manager verification
+- User profiles with next-of-kin and Cloudinary photo uploads
 - Celery workers ready for async tasks
 - Swagger + ReDoc at `/api/v1/schema/`
 
@@ -152,6 +154,26 @@ Prefix: `/api/v1/auth/`
 | `refresh/` | POST | Cookie | Refresh access + refresh tokens |
 | `logout/` | POST | Cookie | Blacklist refresh, clear cookies |
 
+### Profile Endpoint Reference
+
+Prefix: `/api/v1/profiles/`
+
+| Endpoint | Method | Auth | Purpose |
+|----------|--------|------|---------|
+| `all/` | GET | Cookie | List all profiles (staff) |
+| `my-profile/` | GET, PUT, PATCH | Cookie | Get/update own profile (photo upload via Cloudinary) |
+| `my-profile/next-of-kin/` | GET, POST | Cookie | List/add next-of-kin |
+| `my-profile/next-of-kin/{uuid}/` | GET, PUT, PATCH, DELETE | Cookie | Manage a next-of-kin entry |
+
+### Account Endpoint Reference
+
+Prefix: `/api/v1/accounts/`
+
+| Endpoint | Method | Auth | Purpose |
+|----------|--------|------|---------|
+| `verify/{uuid}` | POST | Cookie (staff) | Verify a bank account |
+| `deposit/` | POST | Cookie | Deposit funds into an account |
+
 ### Security Behavior
 
 - **3 failed logins** → account locked for 1 minute, email sent
@@ -186,11 +208,14 @@ make network-inspect    # Inspect Docker network
 │   └── settings/
 │       ├── base.py             # Shared config (DB, DRF, JWT, Celery, Loguru)
 │       ├── local.py            # Dev overrides (mailpit, lockout, CSRF)
-│       └── production.py       # Empty — fill for production
+│       ├── production.py       # Empty — fill for production
+│       └── test.py             # Test settings (SQLite in-memory, Celery eager)
 ├── core_apps/
 │   ├── common/                 # TimeStampedModel, ContentView, CookieAuthentication
 │   ├── user_auth/              # Custom User model, OTP login, account lockout
-│   └── user_profile/           # User profile with signals
+│   ├── user_profile/           # Profile + NextOfKin, Cloudinary photo uploads
+│   └── accounts/               # BankAccount, Transaction, deposit, verification
+├── tests/                      # pytest suite (uses config/settings/test.py)
 ├── docker/                     # Dockerfiles, entrypoint, nginx config
 ├── requirements/               # base.txt, local.txt, production.txt
 ├── logs/                       # debug.log + error.log (Loguru, 10MB rotation)
@@ -198,6 +223,21 @@ make network-inspect    # Inspect Docker network
 ├── Makefile                    # CLI shortcuts
 └── manage.py
 ```
+
+---
+
+## Testing
+
+Tests live in `tests/` and run against `config/settings/test.py` (SQLite in-memory, no external services, Celery eager).
+
+```bash
+# pytest is not in requirements/ — install it first
+pip install pytest pytest-django
+
+pytest
+```
+
+`pytest.ini` sets `testpaths = tests` with `--nomigrations --reuse-db`.
 
 ---
 
@@ -220,6 +260,16 @@ POSTGRES_PASSWORD=<password>
 EMAIL_HOST=localhost
 EMAIL_PORT=1025
 DEFAULT_FROM_EMAIL=noreply@banker.local
+BANK_NAME=Banker
+BANK_CODE=<bank-code>
+CURRENCY_CODE_BDT=<bdt-currency>
+CURRENCY_CODE_GBP=<gbp-currency>
+CURRENCY_CODE_USD=<usd-currency>
+CLOUDINARY_CLOUD_NAME=<cloud-name>
+CLOUDINARY_API_KEY=<api-key>
+CLOUDINARY_API_SECRET=<api-secret>
+CELERY_BROKER_URL=amqp://guest:guest@localhost:5672//
+CELERY_RESULT_BACKEND=redis://localhost:6379/0
 ```
 
 **Gotchas:**
@@ -238,6 +288,7 @@ DEFAULT_FROM_EMAIL=noreply@banker.local
 | Auth | SimpleJWT, Djoser, custom OTP + cookies |
 | Database | PostgreSQL (SQLite config commented out) |
 | Task queue | Celery 5.6.3 + django-celery-beat |
+| Media storage | Cloudinary 1.44.1 (profile photos) |
 | Broker | RabbitMQ (Docker), Redis (result backend) |
 | Docs | drf-spectacular (OpenAPI 3.0) |
 | Logging | Loguru (console + rotating file) |
@@ -258,16 +309,16 @@ python manage.py runserver
 
 1. Branch: `git checkout -b feature/your-feature`
 2. Commit with [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `refactor:`
-3. There are currently no tests — write them alongside new features
+3. Add tests under `tests/` (`pip install pytest pytest-django`, run with `pytest`)
 4. Open a PR to `main`
 
 ---
 
 ## Roadmap
 
-- [ ] Core banking operations (accounts, transactions, ledger)
+- [x] Core banking operations — accounts, deposits, account verification (transfers/ledger pending)
 - [ ] Payment processing integration
-- [ ] Comprehensive test suite (pytest + factory_boy)
+- [ ] Expand test coverage beyond `user_auth` (pytest + factory_boy)
 - [ ] CI/CD pipeline
 - [ ] Production settings + gunicorn deployment
 - [ ] Webhook support
